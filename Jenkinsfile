@@ -57,6 +57,7 @@ pipeline {
         always {
             // Detener el servidor después de las pruebas
             //bat 'taskkill /f /im node.exe'
+            echo 'Servidor detenido.'
         }
         success {
             echo 'Pipeline ejecutado correctamente!'
