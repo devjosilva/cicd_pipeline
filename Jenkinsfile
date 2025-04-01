@@ -28,7 +28,7 @@ pipeline {
                 // Iniciar el servidor para validar que la API responde
                 bat 'start /b npm start'
                 // Dar tiempo para que el servidor inicie
-                bat 'timeout /t 5'
+                // bat 'timeout /t 5'
             }
         }
         
@@ -56,7 +56,7 @@ pipeline {
     post {
         always {
             // Detener el servidor después de las pruebas
-            bat 'taskkill /f /im node.exe'
+            //bat 'taskkill /f /im node.exe'
         }
         success {
             echo 'Pipeline ejecutado correctamente!'
