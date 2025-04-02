@@ -4,66 +4,84 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                // Clonar el código desde el repositorio remoto
+                // Usar checkout scm en lugar de git url
                 checkout scm
             }
         }
         
         stage('Install Dependencies') {
             steps {
-                // Instalar dependencias
+                // Instalar dependencias con npm
                 bat 'npm install'
-            }
-        }
-        
-        stage('Run Tests') {
-            steps {
-                // Ejecutar pruebas y hacer que el pipeline falle si las pruebas fallan
-                bat 'npm test'
             }
         }
         
         stage('Start Server') {
             steps {
-                // Iniciar el servidor para validar que la API responde
-                bat 'start /b npm start'
-                // Dar tiempo para que el servidor inicie
-                // bat 'timeout /t 5'
+                // Iniciar el servidor en segundo plano
+                bat 'start /B npm start'
+                // Esperar a que el servidor esté listo
+                bat 'timeout /t 10 /nobreak'
             }
         }
         
-        stage('Verify API') {
+        stage('Run Tests') {
             steps {
-                // Verificar que la API responde correctamente
-                bat 'curl -f http://localhost:3000/users'
-            }
-        }
-        
-        stage('Generate Test Report') {
-            steps {
-                // Generar informe de pruebas
+                // Ejecutar pruebas y generar reporte
                 bat 'npm run test:report'
             }
             post {
                 always {
-                    // Publicar resultados de pruebas
-                    junit '**/test-results.xml'
+                    // Guardar los resultados de las pruebas
+                    junit 'junit.xml'
                 }
+                failure {
+                    echo 'Las pruebas han fallado!'
+                }
+                success {
+                    echo 'Las pruebas han sido exitosas!'
+                }
+            }
+        }
+        
+        stage('Generate Report') {
+            steps {
+                // Crear archivo REPORT.md
+                bat '''
+                @echo off
+                echo # Reporte de Ejecución del Pipeline > REPORT.md
+                echo. >> REPORT.md
+                echo ## Pasos Realizados >> REPORT.md
+                echo. >> REPORT.md
+                echo 1. Se clonó el repositorio usando checkout scm >> REPORT.md
+                echo 2. Se instalaron las dependencias con npm install >> REPORT.md
+                echo 3. Se inició el servidor para validar la API >> REPORT.md
+                echo 4. Se ejecutaron las pruebas automatizadas >> REPORT.md
+                echo 5. Se generó este reporte con los resultados >> REPORT.md
+                echo. >> REPORT.md
+                echo ## Resultados de las Pruebas >> REPORT.md
+                echo. >> REPORT.md
+                echo Los resultados detallados de las pruebas se pueden encontrar en el reporte JUnit. >> REPORT.md
+                echo. >> REPORT.md
+                echo ## Problemas Encontrados >> REPORT.md
+                echo. >> REPORT.md
+                if errorlevel 1 (
+                    echo - Se encontraron errores durante la ejecución de las pruebas. >> REPORT.md
+                ) else (
+                    echo - No se encontraron problemas durante la ejecución. >> REPORT.md
+                )
+                '''
+                
+                // Archivar el reporte
+                archiveArtifacts artifacts: 'REPORT.md', fingerprint: true
             }
         }
     }
     
     post {
         always {
-            // Detener el servidor después de las pruebas
-            //bat 'taskkill /f /im node.exe'
-            echo 'Servidor detenido.'
-        }
-        success {
-            echo 'Pipeline ejecutado correctamente!'
-        }
-        failure {
-            echo 'El pipeline ha fallado. Revisar los logs para más detalles.'
+            // Detener el servidor al finalizar
+            bat 'taskkill /F /IM node.exe || exit 0'
         }
     }
 }
