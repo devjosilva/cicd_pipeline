@@ -20,8 +20,8 @@ pipeline {
             steps {
                 // Iniciar el servidor en segundo plano
                 bat 'start /B npm start'
-                // Esperar a que el servidor esté listo
-                bat 'timeout /t 10 /nobreak'
+                // Esperar a que el servidor esté listo usando ping en lugar de timeout
+                bat 'ping -n 10 127.0.0.1 > nul'
             }
         }
         
